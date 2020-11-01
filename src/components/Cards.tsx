@@ -1,56 +1,80 @@
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
-import { useQuery } from 'react-apollo';
-import { CHARS_QUERY, EPISODES_QUERY, LOCATIONS_QUERY } from '../queries';
+import { useQuery } from '@apollo/client';
+import { CHARS_QUERY, EPISODES_QUERY, LOCATIONS_QUERY, DATA_QUERY } from '../queries';
 import GridRow from './GridRow';
 import { Location, ILocation } from './Locations'
 import { Episode, IEpisode } from './Episodes'
 import { Character, ICharacter } from './Characters';
-
 import { IFilter } from './Filter';
 
 
 export const CardElement = ({ getCount, page, query, filter }: { page: number, query: string, filter: IFilter, getCount: (c: number) => void; }) => {
-  const [stateLoc, setStateLoc] = useState<JSX.Element[]>([]);
-  const [stateEps, setStateEps] = useState<JSX.Element[]>([]);
-  const [stateCh, setStateCh] = useState<JSX.Element[]>([]);
-  const [apiPage, setApiPage] = useState(1)
-  let { data: charsData, loading: charsLoading, error: charsError } = useQuery(CHARS_QUERY, { variables: { name: query }, skip: !filter.chars })
-  let { data: locationData, loading: locationLoading, error: locationError } = useQuery(LOCATIONS_QUERY, { variables: { name: query }, skip: !filter.loc });
-  let { data: episodesData, loading: episodesLoading, error: episodesError } = useQuery(EPISODES_QUERY, { variables: { name: query }, skip: !filter.eps });
+  const [state, setState] = useState({apiPage:1})
+  const [queryResult, setQueryResult] = useState<JSX.Element[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  //let { data ,loading, error, fetchMore } = useQuery(DATA_QUERY, { variables: { name: query, page: state.apiPage } });  
+  let { data ,loading, error, fetchMore } = useQuery(LOCATIONS_QUERY, { variables: { name: query, page: state.apiPage } });  
+  let { data: cdata ,loading: cLoading, error:cerror } = useQuery(CHARS_QUERY, { variables: { name: query, page: state.apiPage } });
+  let { data: edata ,loading: eLoading, error: eerror } = useQuery(EPISODES_QUERY, { variables: { name: query, page: state.apiPage } });
+  
 
   useEffect(() => {
-    let locations: ILocation[] = [];
-    if (!locationError && locationData) {
-      locations = locationData.locations.results
-    }
-    setStateLoc(locations.map(l => <Location prop={l} />))
-  }, [locationData, locationError])
-  useEffect(() => {
-    let episodes: IEpisode[] = [];
-    if (!episodesError && episodesData) {
-      episodes = episodesData.episodes.results
-    }
-    setStateEps(episodes.map(l => <Episode prop={l} />))
-  }, [episodesData, episodesError])
+    let locations: JSX.Element[] = [];
+    let episodes: JSX.Element[] = [];;
+    let characters: JSX.Element[] = [];    
+        if (filter.loc && !error && data && data.locations) {
+          locations = data.locations.results.map((l: ILocation, i: string) => <Location key={'loc-'+l.id} prop={l} />)
+        }
+        if (filter.eps && !eerror && edata && edata.episodes) {
+          episodes = edata.episodes.results.map((l: IEpisode, i: string) => <Episode key={'epi-'+l.id} prop={l} />)
+        }
+        if (filter.chars && !cerror && cdata && cdata.characters) {
+          characters = cdata.characters.results.map((c: ICharacter, i: string) => <Character key={'char-'+c.id} prop={c} />)
+        }
+    
+    let q=characters.concat(episodes).concat(locations)    
+    console.log(q)
+    setQueryResult(q)
+    
+  }, [filter, data, state.apiPage, error, edata, cdata, eerror, cerror])
 
-  useEffect(() => {
-    let characters: JSX.Element[] = [];
-    if (!charsError && charsData) {
-      characters = charsData.characters.results.map((c: ICharacter) => <Character prop={c} />)
+  const nextPageRequired = useCallback((count: number) => {
+    return page === count && ((filter.chars && cdata?.characters.info.next) ||
+      (filter.loc && data?.locations.info.next) ||
+      (filter.eps && edata?.episodes.info.next))
+  }, [page, filter.chars, filter.loc, filter.eps, cdata, data, edata])
+  
+  const more = useCallback(async () => {
+    setIsLoadingMore(true);
+        await fetchMore({
+          query:CHARS_QUERY,
+          variables: { name: query, page: state.apiPage +1},
+    });
+    
+    setIsLoadingMore(false);        
+  },[fetchMore, query, state.apiPage])
+
+  const power = useCallback((page,queryResult) => {
+    
+    if (!eLoading &&!cLoading && !loading && queryResult.length) {
+      let tempCount =Math.trunc((queryResult.length + 7) / 8)
+      if (nextPageRequired(tempCount)) {        
+        more()
+        //setState((state: { apiPage: number; }) => ({ apiPage: state.apiPage + 1}))
+      }      
+      getCount(tempCount)
     }
-    setStateCh(characters)
-  }, [charsData, charsError])
-  const results = () => {
-    let concatResults = stateCh.concat(stateLoc).concat(stateEps)
-    let count = Math.trunc((concatResults.length + 7) / 8)
-    getCount(count)
-    return concatResults
+    return queryResult.slice((page - 1) * 8, page * 8)
+  }, [cLoading, eLoading, getCount, loading, more, nextPageRequired])
+
+  if (error){
+   return <p> {error} </p>  
   }
   return (
     <Fragment>
-      { stateEps.length || stateLoc.length || stateCh.length ?
-        <GridRow cards={results().slice((page - 1) * 8, page * 8)} /> :
-        (locationLoading || episodesLoading || charsLoading) && <p> loading...</p>
+      { queryResult.length ?
+        <GridRow cards={power(page,queryResult)} /> :
+        (loading || isLoadingMore) && <p> loading...</p>
       }
     </Fragment>
   )

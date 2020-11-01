@@ -1,10 +1,11 @@
 import { Card,CardContent,Typography } from '@material-ui/core';
-import React, { Fragment } from 'react';
+import React from 'react';
 
 
-export interface IEpisode{
+export interface IEpisode extends JSX.Element{
     name:string,
-    episode:string
+    episode:string,
+    id:string
   }
 
 function renderCard(e: IEpisode){
@@ -22,9 +23,7 @@ function renderCard(e: IEpisode){
 
 export const Episode =({prop}: {prop:IEpisode}) =>  {       
       
-    return(
-      <Fragment>
-        {renderCard(prop)}
-      </Fragment>
+    return(      
+        renderCard(prop)      
     )
 }

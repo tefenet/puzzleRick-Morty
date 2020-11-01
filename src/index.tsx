@@ -3,30 +3,50 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
-import { ApolloProvider } from 'react-apollo'
-import { ApolloClient } from 'apollo-client'
-import { createHttpLink } from 'apollo-link-http'
-import { BatchHttpLink } from 'apollo-link-batch-http'
-import { InMemoryCache } from 'apollo-cache-inmemory'
+import { ApolloProvider, Reference } from '@apollo/client'
+import { ApolloClient, InMemoryCache } from '@apollo/client'
 import { ThemeProvider } from '@material-ui/core';
 import { mortyTheme } from './theme';
-import { split } from 'apollo-boost';
-const uri='https://rickandmortyapi.com/graphql'
+const uri = 'https://rickandmortyapi.com/graphql'
 
-const httpLink = createHttpLink({ uri})
-const batchHttpLink = new BatchHttpLink({ uri, headers: { batch: "true " } });
+const options = {
+  typePolicies: {
+    locations: {
+      fields: {
+        results: {
+          keyArgs: ['id'],
+          merge:true
+        }
+      }
+    },
+    episodes: {
+      fields: {
+        results: {
+          keyArgs: ['id'],
+          merge:true
+        }
+      }
+    },
+    characters: {
+      fields: {
+        results: {
+          keyArgs: ['id'],
+          merge:true,
+        }
+      }
+    },
+  }
+}
+
+
 const client = new ApolloClient({
-  link: split(
-    operation => operation.getContext().important === true,
-    httpLink, // if the test is true -- debatch
-    batchHttpLink // otherwise, batching is fine
-  ),
-  cache: new InMemoryCache()
+  uri,
+  cache: new InMemoryCache(options)
 })
-const WithApollo=() => <ApolloProvider client={client}><App /></ApolloProvider>
+const WithApollo = () => <ApolloProvider client={client}><App /></ApolloProvider>
 ReactDOM.render(
   <ThemeProvider theme={mortyTheme}>
-  <WithApollo />
+    <WithApollo />
   </ThemeProvider>,
   document.getElementById('root')
 );

@@ -1,29 +1,53 @@
-import { gql } from "apollo-boost";
-
+import { gql } from "@apollo/client";
 
 export const EPISODES_QUERY = gql`
-query($name:String, $page:number) {    
-  episodes (filter:{name:$name}) {    
+query($name:String, $page:Int) {    
+  episodes (filter:{name:$name},page:$page) {    
+    info {
+      pages
+    next
+    prev
+    count
+    }
     results{
       name
       episode
+      id
     }
   }
-}`
+}
+`
 
 export const LOCATIONS_QUERY = gql`
-query($name:String) {
-  locations(filter:{name:$name}){
+query($name:String,$page:Int) {
+  locations(filter:{name:$name}, page:$page){
+    info {
+      pages
+      next
+      prev
+    }
     results{
       name
       dimension
+      id
     }
   }
 }`
-
-export const CHARS_QUERY = gql`
-  query($name:String) {
-  characters(filter: { name: $name }) {
+export const DATA_QUERY = gql`
+query($name:String,$page:Int) {
+  locations(filter:{name:$name}, page:$page){
+    info {
+      pages
+      next
+      prev
+    }
+    results{
+      name
+      dimension
+      id
+    }
+  }
+  characters(filter: { name: $name },page:$page) {
     info {
       pages
       next
@@ -32,6 +56,35 @@ export const CHARS_QUERY = gql`
     results {
       name
       image      
+      id
+    }
+  }
+  episodes (filter:{name:$name},page:$page) {    
+    info {
+      pages
+      next
+      prev
+    }
+    results{
+      name
+      episode
+      id
+    }
+  }  
+}`
+
+export const CHARS_QUERY = gql`
+  query($name:String, $page:Int) {
+    characters(filter: { name: $name },page:$page) {
+    info {
+      pages
+      next
+      prev
+    }
+    results {
+      name
+      image      
+      id
     }
   }
 }

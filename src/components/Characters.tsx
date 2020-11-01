@@ -4,7 +4,8 @@ import React from 'react';
 
 export interface ICharacter {
   name: string,
-  image: string
+  image: string,
+  id:string
 }
 
 function renderCard(char: ICharacter) {

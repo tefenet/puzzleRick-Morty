@@ -65,7 +65,7 @@ function Main() {
                 setPage(1)
                 temp = <CardElement page={1} query={q ? q : query} filter={f ? f : filter} getCount={getCount} />
             }
-            setView(temp)
+            setView(temp)            
         }, [query, page, count, filter, getCount])
 
 
@@ -80,7 +80,7 @@ function Main() {
                     <Container style={{ display: 'grid' }} disableGutters={true} maxWidth={false}>
                         {view ?
                             view
-                            : <p> </p>}
+                            : <p>eee </p>}
                         <Pagination className={pagination} page={page} count={count} variant="outlined" shape="rounded" onChange={handlePageChange} />
                     </Container>
                 </Grid>

@@ -1,9 +1,10 @@
 import { Card, CardContent, Typography } from '@material-ui/core';
 import React, { Fragment } from 'react';
 
-export interface ILocation{
+export interface ILocation extends JSX.Element{
     name:string,
-    dimension:string
+    dimension:string,
+    id:string
 }
 
 function renderCard(e: ILocation) {
